@@ -68,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             isOpen = true;
         } else {
-            // סוגרים את הכרטיס
             card.innerHTML = `
                 <h3>${meal.strMeal}</h3>
                 <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
@@ -83,7 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
-    // --- אירוע לחיצה על כפתור חיפוש ---
     searchBtn.addEventListener("click", async () => {
     const term = searchInput.value.trim();
     if (!term) {
@@ -91,7 +89,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // הצגת טקסט טעינה
     results.innerHTML = "<p>טוען מתכונים...</p>";
 
     const meals = await fetchMeals(term);
