@@ -7,92 +7,135 @@ document.addEventListener("DOMContentLoaded", () => {
     function showToast(message) {
         Toastify({
             text: message,
-            duration: 3000, 
-            gravity: "bottom", 
+            duration: 3000,
+            gravity: "bottom",
             position: "center",
             backgroundColor: "#333",
             stopOnFocus: true,
         }).showToast();
     }
 
-    async function fetchMeals(searchTerm) {
-        try {
-            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${searchTerm}`);
-            const data = await response.json();
-            return data.meals;
-        } catch (error) {
-            showToast("שגיאה בטעינת הנתונים"+error);
-            return null;
-        }
-    }
-
+      
     function displayMeals(meals) {
-        results.innerHTML = "";   
+        results.innerHTML = "";  
 
         if (!meals || meals.length === 0) {
             showToast("לא נמצאו תוצאות");
             return;
         }
 
-    meals.forEach(meal => {
-    const card = document.createElement("div");
-    card.classList.add("recipe-card");
+        meals.forEach(meal => {
+            const card = document.createElement("div");
+            card.classList.add("recipe-card");
 
-    let isOpen = false;
+            let isOpen = false;
 
-    card.innerHTML = `
-        <h3>${meal.strMeal}</h3>
-        <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
-        <p>קטגוריה: ${meal.strCategory}</p>
-    `;
+            function createCollapsedView() {
+                while (card.firstChild) card.removeChild(card.firstChild);
 
-    card.addEventListener("click", () => {
-        if (!isOpen) {
-            let ingredients = "";
-            for (let i = 1; i <= 20; i++) {
-                const ingredient = meal[`strIngredient${i}`];
-                const measure = meal[`strMeasure${i}`];
-                if (ingredient && ingredient.trim() !== "") {
-                    ingredients += `${ingredient} - ${measure}<br>`;
-                }
+                const title = document.createElement("h3");
+                title.textContent = meal.strMeal;
+
+                const img = document.createElement("img");
+                img.src = meal.strMealThumb;
+                img.alt = meal.strMeal;
+
+                const category = document.createElement("p");
+                category.textContent = `קטגוריה: ${meal.strCategory}`;
+
+                card.appendChild(title);
+                card.appendChild(img);
+                card.appendChild(category);
             }
 
-            card.innerHTML = `
-                <h3>${meal.strMeal}</h3>
-                <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
-                <p>קטגוריה: ${meal.strCategory}</p>
-                <h4>מרכיבים:</h4>
-                <p>${ingredients}</p>
-                <h4>הוראות:</h4>
-                <p>${meal.strInstructions}</p>
-            `;
-            isOpen = true;
-        } else {
-            card.innerHTML = `
-                <h3>${meal.strMeal}</h3>
-                <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
-                <p>קטגוריה: ${meal.strCategory}</p>
-            `;
-            isOpen = false;
-        }
-        });
+            function createExpandedView() {
+                while (card.firstChild) card.removeChild(card.firstChild);
 
-    results.appendChild(card);
-        });
+                const title = document.createElement("h3");
+                title.textContent = meal.strMeal;
 
+                const img = document.createElement("img");
+                img.src = meal.strMealThumb;
+                img.alt = meal.strMeal;
+
+                const category = document.createElement("p");
+                category.textContent = `קטגוריה: ${meal.strCategory}`;
+
+                const ingredientsTitle = document.createElement("h4");
+                ingredientsTitle.textContent = "מרכיבים:";
+
+                const ingredientsContainer = document.createElement("div");
+                for (let i = 1; i <= 20; i++) {
+                    const ingredient = meal[`strIngredient${i}`];
+                    const measure = meal[`strMeasure${i}`];
+                    if (ingredient && ingredient.trim() !== "") {
+                        const line = document.createElement("p");
+                        line.textContent = `${ingredient} - ${measure}`;
+                        ingredientsContainer.appendChild(line);
+                    }
+                }
+
+                const instructionsTitle = document.createElement("h4");
+                instructionsTitle.textContent = "הוראות:";
+
+                const instructions = document.createElement("p");
+                instructions.textContent = meal.strInstructions;
+
+                card.appendChild(title);
+                card.appendChild(img);
+                card.appendChild(category);
+                card.appendChild(ingredientsTitle);
+                card.appendChild(ingredientsContainer);
+                card.appendChild(instructionsTitle);
+                card.appendChild(instructions);
+            }
+
+            createCollapsedView();
+
+            card.addEventListener("click", () => {
+                if (!isOpen) {
+                    createExpandedView();
+                    isOpen = true;
+                } else {
+                    createCollapsedView();
+                    isOpen = false;
+                }
+            });
+
+            results.appendChild(card);
+        });
     }
 
     searchBtn.addEventListener("click", async () => {
-    const term = searchInput.value.trim();
-    if (!term) {
-        showToast("אנא הזן מאכל");
-        return;
-    }
+        const term = searchInput.value.trim();
+        if (!term) {
+            showToast("אנא הזן מאכל");
+            return;
+        }
 
-    results.innerHTML = "<p>טוען מתכונים...</p>";
+        results.innerHTML = "";
+        const loading = document.createElement("p");
+        loading.textContent = "טוען מתכונים...";
+        results.appendChild(loading);
 
-    const meals = await fetchMeals(term);
-    displayMeals(meals);
+        try {
+            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${term}`);
+            const data = await response.json();
+            const meals = data.meals;
+
+            results.innerHTML = "";   
+
+            if (!meals) {
+                showToast("לא נמצאו תוצאות");
+                return;
+            }
+
+            displayMeals(meals);
+
+        } catch (error) {
+            results.innerHTML = "";
+            showToast("שגיאה בטעינת הנתונים: " + error);
+        }
     });
 
 });
